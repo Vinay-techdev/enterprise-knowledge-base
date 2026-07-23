@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root{font-family:"Inter",sans-serif;color:#0f172a;background:#020617;font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-width:320px;min-height:100vh;background:#020617}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+::selection{background:#c7d2fe;color:#312e81}
+.card-premium{border:1px solid rgba(226,232,240,.9);background:rgba(255,255,255,.96);border-radius:1.5rem;box-shadow:0 12px 40px rgba(15,23,42,.08);backdrop-filter:blur(14px)}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.875rem;background:#4f46e5;padding:.7rem 1rem;font-size:.875rem;font-weight:700;color:white;transition:.2s;box-shadow:0 8px 20px rgba(79,70,229,.22)}
+.btn-primary:hover{background:#4338ca;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.6;transform:none}
+.input-premium{width:100%;border:1px solid #cbd5e1;border-radius:.875rem;background:white;padding:.75rem .875rem;outline:none;transition:.2s}
+.input-premium:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.12)}
