@@ -77,3 +77,8 @@ export const deleteFromLocalStorage = async ({
     }
   }
 };
+
+//? Rag integration with local storage 
+export const getLocalFileBuffer = async ({ key }) => {
+  return fs.readFile(path.resolve(key));
+};

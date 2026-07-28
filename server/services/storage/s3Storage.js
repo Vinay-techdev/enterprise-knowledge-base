@@ -99,3 +99,30 @@ export const deleteFromS3 = async ({
 
   await s3Client.send(command);
 };
+
+//? Rag integration with s3 storage
+
+const streamToBuffer = async (stream) => {
+  const chunks = [];
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks);
+};
+
+export const getS3FileBuffer = async ({ key }) => {
+  const command = new GetObjectCommand({
+    Bucket: s3BucketName,
+    Key: key,
+  });
+
+  const response = await s3Client.send(command);
+
+  if (!response.Body) {
+    throw new Error("S3 returned an empty document body");
+  }
+
+  return streamToBuffer(response.Body);
+};
