@@ -9,6 +9,7 @@ import {
 } from "../services/storage/storageService.js";
 import { cleanText, isObjectId } from "../utils/validation.js";
 import { processDocumentForRag } from "../services/rag/documentProcessingService.js";
+import DocumentChunk from "../models/DocumentChunk.js";
 
 const getOrganizationId = (req) => req.user.organization._id;
 
@@ -215,6 +216,11 @@ export const deleteFile = async (req, res, next) => {
 
     await deleteDocumentFile({
       document,
+    });
+
+    await DocumentChunk.deleteMany({
+      document: document._id,
+      organization: getOrganizationId(req),
     });
 
     await Document.deleteOne({
