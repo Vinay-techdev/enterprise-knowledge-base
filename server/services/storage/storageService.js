@@ -1,12 +1,14 @@
 import {
   deleteFromLocalStorage,
   getLocalDownload,
+  getLocalFileBuffer,
   uploadToLocalStorage
 } from "./localStorage.js";
 
 import {
   deleteFromS3,
   getS3Download,
+  getS3FileBuffer,
   uploadToS3
 } from "./s3Storage.js";
 
@@ -68,6 +70,21 @@ export const deleteDocumentFile = async ({
 
   return deleteFromLocalStorage({
     key: document.storageKey
+  });
+};
+
+//? Rag integration with storage service
+export const getDocumentFileBuffer = async ({
+  document,
+}) => {
+  if (document.storageProvider === "s3") {
+    return getS3FileBuffer({
+      key: document.storageKey,
+    });
+  }
+
+  return getLocalFileBuffer({
+    key: document.storageKey,
   });
 };
 

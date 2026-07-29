@@ -94,63 +94,56 @@ export default function Documents() {
     }
   };
 
-const download = async (document) => {
-  try {
-    setBusyId(document._id);
+  const download = async (document) => {
+    try {
+      setBusyId(document._id);
 
-    if (document.storageProvider === "s3") {
-      const { data } = await api.get(
-        `/documents/${document._id}/download`,
-      );
+      if (document.storageProvider === "s3") {
+        const { data } = await api.get(`/documents/${document._id}/download`);
 
-      if (!data.downloadUrl) {
-        throw new Error("Download URL was not returned");
+        if (!data.downloadUrl) {
+          throw new Error("Download URL was not returned");
+        }
+
+        window.location.assign(data.downloadUrl);
+        return;
       }
 
-      window.location.assign(data.downloadUrl);
-      return;
-    }
-
-    const response = await api.get(
-      `/documents/${document._id}/download`,
-      {
+      const response = await api.get(`/documents/${document._id}/download`, {
         responseType: "blob",
-      },
-    );
+      });
 
-    const url = URL.createObjectURL(response.data);
-    const anchor = window.document.createElement("a");
+      const url = URL.createObjectURL(response.data);
+      const anchor = window.document.createElement("a");
 
-    anchor.href = url;
-    anchor.download = document.originalName;
+      anchor.href = url;
+      anchor.download = document.originalName;
 
-    window.document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
 
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (error) {
-    let message = "Download failed";
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      let message = "Download failed";
 
-    if (error.response?.data instanceof Blob) {
-      try {
-        const errorBody = JSON.parse(
-          await error.response.data.text(),
-        );
+      if (error.response?.data instanceof Blob) {
+        try {
+          const errorBody = JSON.parse(await error.response.data.text());
 
-        message = errorBody.message || message;
-      } catch {
-        // Keep the default error message.
+          message = errorBody.message || message;
+        } catch {
+          // Keep the default error message.
+        }
+      } else {
+        message = getErrorMessage(error, message);
       }
-    } else {
-      message = getErrorMessage(error, message);
-    }
 
-    toast.error(message);
-  } finally {
-    setBusyId(null);
-  }
-};
+      toast.error(message);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const remove = async (document) => {
     if (
@@ -172,6 +165,26 @@ const download = async (document) => {
       setBusyId(null);
     }
   };
+
+  //? Apply colors to the status based on the document's status
+  const getStatusStyle = (status) => {
+  switch (status) {
+    case "uploaded":
+      return "bg-blue-50 text-blue-700";
+
+    case "processing":
+      return "bg-amber-50 text-amber-700";
+
+    case "ready":
+      return "bg-emerald-50 text-emerald-700";
+
+    case "failed":
+      return "bg-red-50 text-red-700";
+
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
 
   return (
     <div className="relative mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-10">
@@ -341,8 +354,14 @@ const download = async (document) => {
                         {formatBytes(document.size)}
                       </td>
                       <td className="px-5 py-4">
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold capitalize text-emerald-700">
-                          {document.status}
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusStyle(document.status)}`}>
+                          {document.status === "processing" && "Processing"}
+
+                          {document.status === "ready" && "Ready"}
+
+                          {document.status === "failed" && "Failed"}
+
+                          {document.status === "uploaded" && "Uploaded"}
                         </span>
                       </td>
                       <td className="px-5 py-4">
@@ -357,11 +376,11 @@ const download = async (document) => {
                           </button>
                           {canDelete && (
                             <button
-                              disabled={busyId === document._id}
+                              disabled={ busyId === document._id || document.status === "processing" || document.status === "uploaded" }
                               onClick={() => remove(document)}
                               className="rounded-xl border border-slate-200 p-2.5 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                               aria-label={`Delete ${document.originalName}`}
-                            >
+                              title={document.status !== "ready" ? "Document is still processing" : `Download ${document.originalName}`}>
                               <Trash2 size={17} />
                             </button>
                           )}
