@@ -19,3 +19,5 @@ export const embeddingDimensions = Number.parseInt(
 if (!Number.isInteger(embeddingDimensions) || embeddingDimensions <= 0) {
   throw new Error("GEMINI_EMBEDDING_DIMENSIONS must be a positive integer");
 }
+//? The generation model is used for text generation tasks, such as summarization, question answering, and more.
+export const generationModel = process.env.GEMINI_GENERATION_MODEL || "gemini-3.6-flash";
