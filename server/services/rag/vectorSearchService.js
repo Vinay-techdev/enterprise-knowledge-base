@@ -58,6 +58,12 @@ export const searchRelevantChunks = async ({
 
   const numCandidates = Math.max(normalizedTopK * 10, 50);
 
+  //? Log the filter for debugging purposes
+  console.log("Vector search filter:", {
+  organization: filter.organization.toString(),
+  document: filter.document?.toString() || null,
+});
+
   const results = await DocumentChunk.aggregate([
     {
       $vectorSearch: {
