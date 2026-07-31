@@ -4,6 +4,7 @@ import { getDocumentFileBuffer } from "../storage/storageService.js";
 import { generateDocumentEmbedding } from "./embeddingService.js";
 import { splitTextIntoChunks } from "./textChunkingService.js";
 import { extractTextFromDocument } from "./textExtractionService.js";
+import { generateDocumentIntelligence } from "./documentIntelligenceService.js";
 
 const getSafeErrorMessage = (error) => {
   const message =
@@ -29,7 +30,7 @@ export const processDocumentForRag = async (documentId) => {
       processedAt: null,
     });
 
-    // Makes reprocessing safe.
+    // Makes reprocessing safe by removing old chunks first.
     await DocumentChunk.deleteMany({
       document: document._id,
     });
@@ -43,6 +44,26 @@ export const processDocumentForRag = async (documentId) => {
       mimeType: document.mimeType,
     });
 
+    /*
+     * Document intelligence is optional enrichment.
+     * If classification or metadata generation fails,
+     * chunking and embedding should still continue.
+     */
+    let intelligence = null;
+
+    try {
+      intelligence = await generateDocumentIntelligence({
+        text: extractedText,
+        originalName: document.originalName,
+        currentTitle: document.title,
+      });
+    } catch (error) {
+      console.warn(
+        `Document intelligence failed for ${document._id}:`,
+        getSafeErrorMessage(error),
+      );
+    }
+
     const chunks = splitTextIntoChunks(extractedText);
 
     if (chunks.length === 0) {
@@ -51,11 +72,10 @@ export const processDocumentForRag = async (documentId) => {
 
     const chunkDocuments = [];
 
-    // Sequential processing avoids hitting API rate limits
-    // while we are developing.
+    // Sequential processing reduces the risk of hitting API rate limits.
     for (const chunk of chunks) {
       const embedding = await generateDocumentEmbedding({
-        title: document.title,
+        title: intelligence?.generatedTitle || document.title,
         content: chunk.content,
       });
 
@@ -68,7 +88,7 @@ export const processDocumentForRag = async (documentId) => {
 
         metadata: {
           originalName: document.originalName,
-          title: document.title,
+          title: intelligence?.generatedTitle || document.title,
           pageNumber: null,
         },
       });
@@ -76,16 +96,35 @@ export const processDocumentForRag = async (documentId) => {
 
     await DocumentChunk.insertMany(chunkDocuments);
 
-    await Document.findByIdAndUpdate(document._id, {
+    const documentUpdate = {
       status: "ready",
       processingError: null,
       chunkCount: chunkDocuments.length,
       processedAt: new Date(),
-    });
+    };
+
+    if (intelligence) {
+      documentUpdate.documentType = intelligence.documentType;
+
+      documentUpdate.intelligence = {
+        generatedTitle: intelligence.generatedTitle,
+
+        summary: intelligence.summary,
+
+        keywords: intelligence.keywords,
+
+        entities: intelligence.entities,
+
+        generatedAt: new Date(),
+      };
+    }
+
+    await Document.findByIdAndUpdate(document._id, documentUpdate);
 
     return {
       documentId: document._id,
       chunkCount: chunkDocuments.length,
+      intelligenceGenerated: Boolean(intelligence),
     };
   } catch (error) {
     await DocumentChunk.deleteMany({

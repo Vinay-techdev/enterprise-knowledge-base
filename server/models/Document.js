@@ -63,6 +63,77 @@ const documentSchema = new mongoose.Schema(
       default: null,
     },
 
+    documentType: {
+      type: String,
+      enum: [
+        "resume",
+        "receipt",
+        "invoice",
+        "policy",
+        "report",
+        "agreement",
+        "manual",
+        "notes",
+        "certificate",
+        "academic",
+        "other",
+      ],
+      default: "other",
+      index: true,
+    },
+
+    intelligence: {
+      generatedTitle: {
+        type: String,
+        trim: true,
+        maxlength: 160,
+        default: null,
+      },
+
+      summary: {
+        type: String,
+        maxlength: 2000,
+        default: null,
+      },
+
+      keywords: {
+        type: [String],
+        default: [],
+      },
+
+      entities: {
+        organizations: {
+          type: [String],
+          default: [],
+        },
+
+        people: {
+          type: [String],
+          default: [],
+        },
+
+        dates: {
+          type: [String],
+          default: [],
+        },
+
+        amounts: {
+          type: [String],
+          default: [],
+        },
+
+        technologies: {
+          type: [String],
+          default: [],
+        },
+      },
+
+      generatedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
@@ -83,6 +154,12 @@ const documentSchema = new mongoose.Schema(
 
 documentSchema.index({
   organization: 1,
+  createdAt: -1,
+});
+
+documentSchema.index({
+  organization: 1,
+  documentType: 1,
   createdAt: -1,
 });
 
