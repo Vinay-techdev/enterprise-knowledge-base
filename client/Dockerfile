@@ -1,4 +1,8 @@
-FROM node:22-alpine AS build
+FROM node:22.18.0-alpine AS build
+
+LABEL maintainer="Vinay"
+LABEL project="Enterprise Knowledge Base"
+LABEL version="1.0"
 
 WORKDIR /app
 
