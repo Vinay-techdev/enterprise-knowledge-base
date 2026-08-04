@@ -1,51 +1,10 @@
+import ReactMarkdown from "react-markdown";
 import { BookOpenCheck, Bot, Database } from "lucide-react";
 import SourceCard from "./SourceCard";
 
-const renderAnswer = (text = "") => {
-  return text.split("\n").map((line, lineIndex) => {
-    const trimmed = line.trim();
+export default function AnswerCard({ answer, sources = [], retrieval }) {
+  const markdownAnswer = typeof answer === "string" ? answer : "";
 
-    if (!trimmed) {
-      return <div key={lineIndex} className="h-3" />;
-    }
-
-    const isBullet = trimmed.startsWith("* ") || trimmed.startsWith("- ");
-
-    const content = isBullet ? trimmed.slice(2) : trimmed;
-
-    const parts = content.split(/(\*\*.*?\*\*)/g);
-
-    const formattedContent = parts.map((part, partIndex) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return (
-          <strong key={partIndex} className="font-semibold text-slate-900">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-
-      return part;
-    });
-
-    if (isBullet) {
-      return (
-        <div key={lineIndex} className="flex gap-3">
-          <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
-
-          <p className="leading-7">{formattedContent}</p>
-        </div>
-      );
-    }
-
-    return (
-      <p key={lineIndex} className="leading-7">
-        {formattedContent}
-      </p>
-    );
-  });
-};
-
-export default function AnswerCard({ answer, sources, retrieval }) {
   const uniqueDocumentCount = new Set(
     sources.map(
       (source) => source.documentId || source.originalName || source.title,
@@ -81,32 +40,121 @@ export default function AnswerCard({ answer, sources, retrieval }) {
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm">
             <Database size={14} />
             {retrieval.relevantCount ?? 0} relevant{" "}
-            {(retrieval.relevantCount ?? 0) === 1 ? "chuck" : "sources"}
+            {(retrieval.relevantCount ?? 0) === 1 ? "source" : "sources"}
           </div>
         )}
       </div>
 
       <div className="p-5 sm:p-7">
-        <div className="max-w-4xl space-y-1 text-sm text-slate-700 sm:text-[15px]">
-          {renderAnswer(answer)}
+        <div className="max-w-4xl">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => (
+                <h1 className="mb-4 mt-7 text-2xl font-bold tracking-tight text-slate-900 first:mt-0">
+                  {children}
+                </h1>
+              ),
+
+              h2: ({ children }) => (
+                <h2 className="mb-3 mt-7 text-xl font-bold tracking-tight text-slate-900 first:mt-0">
+                  {children}
+                </h2>
+              ),
+
+              h3: ({ children }) => (
+                <h3 className="mb-2 mt-6 text-base font-bold text-slate-900 first:mt-0">
+                  {children}
+                </h3>
+              ),
+
+              p: ({ children }) => (
+                <p className="mb-3 text-sm leading-7 text-slate-700 sm:text-[15px]">
+                  {children}
+                </p>
+              ),
+
+              ul: ({ children }) => (
+                <ul className="mb-4 list-disc space-y-2 pl-6 marker:text-indigo-500">
+                  {children}
+                </ul>
+              ),
+
+              ol: ({ children }) => (
+                <ol className="mb-4 list-decimal space-y-2 pl-6 marker:text-indigo-500">
+                  {children}
+                </ol>
+              ),
+
+              li: ({ children }) => (
+                <li className="text-sm leading-7 text-slate-700 sm:text-[15px]">
+                  {children}
+                </li>
+              ),
+
+              strong: ({ children }) => (
+                <strong className="font-semibold text-slate-900">
+                  {children}
+                </strong>
+              ),
+
+              code: ({ children }) => (
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-700">
+                  {children}
+                </code>
+              ),
+
+              hr: () => <hr className="my-6 border-slate-200" />,
+            }}
+          >
+            {markdownAnswer}
+          </ReactMarkdown>
         </div>
 
-        <div>
-          <div className="flex items-center gap-2">
-            <BookOpenCheck size={18} className="text-indigo-600" />
+        <div className="mt-7 border-t border-slate-100 pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <BookOpenCheck size={18} className="text-indigo-600" />
 
-            <h3 className="font-bold text-slate-800">Supporting sources</h3>
+                <h3 className="font-bold text-slate-800">Supporting sources</h3>
 
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
-              {sources?.length}
-            </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                  {sources.length}
+                </span>
+              </div>
+
+              {sources.length > 0 && (
+                <p className="mt-1 text-xs text-slate-400">
+                  Retrieved from {uniqueDocumentCount}{" "}
+                  {uniqueDocumentCount === 1 ? "document" : "documents"}
+                </p>
+              )}
+            </div>
           </div>
 
-          {sources.length > 0 && (
-            <p className="mt-1 text-xs text-slate-400">
-              Retrieved from {uniqueDocumentCount}{" "}
-              {uniqueDocumentCount === 1 ? "document" : "documents"}
-            </p>
+          {sources.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-7 text-center">
+              <p className="text-sm font-medium text-slate-600">
+                No supporting sources were found.
+              </p>
+
+              <p className="mt-1 text-xs text-slate-400">
+                Try asking a more specific question about your uploaded
+                documents.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-4 2xl:grid-cols-2">
+              {sources.map((source) => (
+                <SourceCard
+                  key={
+                    source.chunkId ||
+                    `${source.documentId}-${source.chunkIndex ?? "document"}`
+                  }
+                  source={source}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
